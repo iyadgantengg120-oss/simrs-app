@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  nama      String
+  role      String   // ADMIN, DOKTER, PENDAFTARAN
+  createdAt DateTime @default(now())
+}
+
+model Poli {
+  id      Int       @id @default(autoincrement())
+  nama    String    @unique
+  dokter  Dokter[]
+  antrian Antrian[]
+}
+
+model Dokter {
+  id        Int       @id @default(autoincrement())
+  nama      String
+  spesialis String
+  jadwal    String
+  poliId    Int
+  poli      Poli      @relation(fields: [poliId], references: [id])
+  antrian   Antrian[]
+}
+
+model Pasien {
+  id           Int       @id @default(autoincrement())
+  noRM         String    @unique
+  nama         String
+  jenisKelamin String
+  tanggalLahir DateTime
+  alamat       String
+  noHp         String?
+  createdAt    DateTime  @default(now())
+  antrian      Antrian[]
+}
+
+model Antrian {
+  id         Int         @id @default(autoincrement())
+  noAntrian  String
+  tanggal    DateTime    @default(now())
+  status     String      @default("MENUNGGU") // MENUNGGU, DIPERIKSA, SELESAI
+  pasienId   Int
+  dokterId   Int
+  poliId     Int
+  pasien     Pasien      @relation(fields: [pasienId], references: [id])
+  dokter     Dokter      @relation(fields: [dokterId], references: [id])
+  poli       Poli        @relation(fields: [poliId], references: [id])
+  rekamMedis RekamMedis?
+  pembayaran Pembayaran?
+}
+
+model RekamMedis {
+  id        Int         @id @default(autoincrement())
+  antrianId Int         @unique
+  antrian   Antrian     @relation(fields: [antrianId], references: [id])
+  keluhan   String
+  diagnosis String
+  tindakan  String
+  resep     String?
+  createdAt DateTime    @default(now())
+  resepObat ResepObat[]
+}
+
+model Obat {
+  id        Int         @id @default(autoincrement())
+  nama      String
+  satuan    String
+  stok      Int
+  harga     Int
+  resepObat ResepObat[]
+}
+
+model ResepObat {
+  id           Int        @id @default(autoincrement())
+  rekamMedisId Int
+  obatId       Int
+  jumlah       Int
+  aturanPakai  String?
+  rekamMedis   RekamMedis @relation(fields: [rekamMedisId], references: [id])
+  obat         Obat       @relation(fields: [obatId], references: [id])
+}
+
+model Pembayaran {
+  id              Int      @id @default(autoincrement())
+  antrianId       Int      @unique
+  antrian         Antrian  @relation(fields: [antrianId], references: [id])
+  biayaKonsultasi Int
+  biayaTindakan   Int
+  biayaObat       Int
+  total           Int
+  metode          String   // TUNAI, TRANSFER, QRIS
+  createdAt       DateTime @default(now())
+}
